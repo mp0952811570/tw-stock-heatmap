@@ -133,7 +133,7 @@ def render_heat_overview(df, period_key, period_name):
 
     # 顏色編碼表格
     def color_heat(val):
-        if val is None:
+        if pd.isna(val):
             return ""
         if val > 20:
             return "background-color: #ff4500; color: white"
@@ -148,7 +148,7 @@ def render_heat_overview(df, period_key, period_name):
         return ""
 
     def color_return(val):
-        if val is None:
+        if pd.isna(val):
             return ""
         if val > 5:
             return "background-color: #ff6b6b; color: white"
@@ -161,16 +161,17 @@ def render_heat_overview(df, period_key, period_name):
         return ""
 
     display_df = df.copy()
-    display_df["熱度"] = display_df["熱度(%)"].apply(
-        lambda x: f"🔥 {x:+.1f}%" if x > 0 else f"❄️ {x:+.1f}%" if x is not None else "—"
-    )
-    display_cols = ["圖示", "產業", "個股數", "熱度", "區間漲跌(%)"]
+    # 直接用原始數值 column 做顏色，最後再用 format 統一套用顯示格式
+    display_cols = ["圖示", "產業", "個股數", "熱度(%)", "區間漲跌(%)"]
 
     styled = (
         display_df[display_cols]
-        .style.map(color_return, subset=["區間漲跌(%)"])
-        .map(color_heat, subset=["熱度"])
-        .format({"區間漲跌(%)": "{:+.2f}"})
+        .style.map(color_heat, subset=["熱度(%)"])
+        .map(color_return, subset=["區間漲跌(%)"])
+        .format({
+            "熱度(%)": "{:+.1f}%",
+            "區間漲跌(%)": "{:+.2f}%",
+        })
     )
     st.dataframe(styled, use_container_width=True, height=600)
 
