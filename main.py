@@ -83,17 +83,14 @@ def render_sidebar():
 
 
 # ─── 產業熱度排行 ───────────────────────────────────────
-@st.cache_data(ttl=1800, show_spinner="計算產業熱度中...")
+@st.cache_data(ttl=1800, show_spinner="正在計算各產業熱度與漲跌幅...")
 def compute_industry_heatmap(period_key: str):
     """計算所有產業的熱度與漲跌幅。"""
     stocks = fetch_industry_data()
     index = build_industry_index(stocks)
 
     results = []
-    total = len(index)
-    progress_bar = st.progress(0, text="正在計算產業數據...")
-
-    for i, (cat_name, cat_data) in enumerate(index.items()):
+    for cat_name, cat_data in index.items():
         stock_ids = [s["id"] for s in cat_data["stocks"]]
         market_types = [s["type"] for s in cat_data["stocks"]]
 
@@ -113,9 +110,7 @@ def compute_industry_heatmap(period_key: str):
             "6月(%)": returns.get("6m"),
             "1年(%)": returns.get("1y"),
         })
-        progress_bar.progress((i + 1) / total)
 
-    progress_bar.empty()
     return pd.DataFrame(results).sort_values("熱度(%)", ascending=False)
 
 
@@ -125,11 +120,11 @@ def render_heat_overview(df, period_key, period_name):
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        hot_count = len(df[df["熱度(%)"] > 0])
+        hot_count = int(len(df[df["熱度(%)"].fillna(0) > 0]))
         st.metric("📈 升溫產業數", hot_count, delta=f"/ {len(df)}")
     with col2:
         avg_heat = df["熱度(%)"].mean()
-        st.metric("🌡️ 全市場平均熱度", f"{avg_heat:+.1f}%")
+        st.metric("🌡️ 全市場平均熱度", f"{avg_heat:+.1f}%" if pd.notna(avg_heat) else "N/A")
     with col3:
         top_industry = df.iloc[0]["產業"] if len(df) > 0 else "N/A"
         st.metric("🏆 最熱產業", top_industry)
@@ -173,8 +168,8 @@ def render_heat_overview(df, period_key, period_name):
 
     styled = (
         display_df[display_cols]
-        .style.applymap(color_return, subset=[f"{period_name}漲跌(%)"])
-        .applymap(color_heat, subset=["熱度"])
+        .style.map(color_return, subset=[f"{period_name}漲跌(%)"])
+        .map(color_heat, subset=["熱度"])
         .format({f"{period_name}漲跌(%)": "{:+.2f}"})
     )
     st.dataframe(styled, use_container_width=True, height=600)
@@ -239,27 +234,40 @@ def render_industry_explorer(index, selected_industry):
 
         # 個股列表 + 漲跌幅
         st.markdown("### 📋 個股列表與漲跌幅")
-        stock_data = []
-        stocks = cat_data["stocks"][:50]  # 取前 50 檔
 
-        progress = st.progress(0, "載入個股數據中...")
-        for i, s in enumerate(stocks):
-            returns = get_historical_returns(s["id"], s["type"])
-            price_info = get_stock_price(s["id"], s["type"])
-            stock_data.append({
-                "代碼": s["id"],
-                "名稱": s["name"],
-                "市場": "上市" if s["type"] == "twse" else "上櫃" if s["type"] == "tpex" else "興櫃",
-                "現價": price_info.get("price") if price_info else None,
-                "漲跌(%)": price_info.get("change_pct") if price_info else None,
-                "1週(%)": returns.get("1w"),
-                "1月(%)": returns.get("1m"),
-                "3月(%)": returns.get("3m"),
-            })
-            progress.progress((i + 1) / len(stocks))
-        progress.empty()
+        # 取前 30 檔代表性個股
+        sample_stocks = cat_data["stocks"][:30]
 
-        df = pd.DataFrame(stock_data)
+        @st.cache_data(ttl=600, show_spinner="載入個股數據中...")
+        def load_stock_details(stock_list_json):
+            import json
+            stocks = json.loads(stock_list_json)
+            stock_data = []
+            for s in stocks:
+                try:
+                    returns = get_historical_returns(s["id"], s["type"])
+                    price_info = get_stock_price(s["id"], s["type"])
+                    stock_data.append({
+                        "代碼": s["id"],
+                        "名稱": s["name"],
+                        "市場": "上市" if s["type"] == "twse" else "上櫃" if s["type"] == "tpex" else "興櫃",
+                        "現價": price_info.get("price") if price_info else None,
+                        "漲跌(%)": price_info.get("change_pct") if price_info else None,
+                        "1週(%)": returns.get("1w"),
+                        "1月(%)": returns.get("1m"),
+                        "3月(%)": returns.get("3m"),
+                    })
+                except Exception:
+                    stock_data.append({
+                        "代碼": s["id"], "名稱": s["name"],
+                        "市場": "上市" if s["type"] == "twse" else "上櫃" if s["type"] == "tpex" else "興櫃",
+                        "現價": None, "漲跌(%)": None,
+                        "1週(%)": None, "1月(%)": None, "3月(%)": None,
+                    })
+            return pd.DataFrame(stock_data)
+
+        import json
+        df = load_stock_details(json.dumps(sample_stocks, ensure_ascii=False))
         st.dataframe(
             df.style.format({
                 "現價": "{:.1f}",
