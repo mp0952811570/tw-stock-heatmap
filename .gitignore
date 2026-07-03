@@ -1,0 +1,8 @@
+# 快取目錄 — 自動生成，不需提交到 Git
+__pycache__/
+*.pyc
+.cache/
+.venv/
+*.egg-info/
+dist/
+build/
