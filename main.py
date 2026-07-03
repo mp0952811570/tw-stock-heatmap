@@ -4,7 +4,7 @@
 
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 
 # 頁面設定
@@ -54,12 +54,27 @@ def render_sidebar():
 
         st.markdown("---")
         st.subheader("📅 漲跌幅區間")
-        period = st.selectbox(
-            "選擇區間",
-            ["1週", "1月", "3月", "6月", "1年"],
-            index=2,
-        )
-        period_key = {"1週": "1w", "1月": "1m", "3月": "3m", "6月": "6m", "1年": "1y"}[period]
+
+        # 預設區間
+        period_options = ["當日", "前日", "近五日", "近十日", "1週", "1月", "3月", "6月", "1年"]
+        period_keys = {"當日": "today", "前日": "prev", "近五日": "5d", "近十日": "10d",
+                       "1週": "1w", "1月": "1m", "3月": "3m", "6月": "6m", "1年": "1y"}
+        period = st.selectbox("選擇預設區間", period_options, index=4)  # default 1週
+        period_key = period_keys[period]
+
+        # 自訂日期範圍
+        st.caption("或選擇自訂日期範圍👇")
+        use_custom = st.checkbox("📆 使用自訂日期範圍")
+        custom_start = None
+        custom_end = None
+        if use_custom:
+            c1, c2 = st.columns(2)
+            with c1:
+                custom_start = st.date_input("起始日期", value=datetime.now() - timedelta(days=30),
+                                             max_value=datetime.now())
+            with c2:
+                custom_end = st.date_input("結束日期", value=datetime.now(),
+                                           max_value=datetime.now())
 
         st.markdown("---")
         st.subheader("🏭 產業類別")
@@ -79,44 +94,59 @@ def render_sidebar():
         )
         st.markdown("🐙 [GitHub](https://github.com) · Streamlit Cloud")
 
-        return mode, period, period_key, selected_industry
+        return mode, period, period_key, selected_industry, use_custom, custom_start, custom_end
 
 
 # ─── 產業熱度排行 ───────────────────────────────────────
 @st.cache_data(ttl=1800, show_spinner="正在計算各產業熱度與漲跌幅...")
-def compute_industry_heatmap(period_key: str):
-    """計算所有產業的熱度與漲跌幅。"""
+def compute_industry_heatmap(period_key: str, custom_start: str = None, custom_end: str = None):
+    """計算所有產業的熱度與漲跌幅。支援固定區間或自訂日期範圍。"""
     stocks = fetch_industry_data()
     index = build_industry_index(stocks)
+
+    # 決定顯示的 key
+    if custom_start and custom_end:
+        display_key = "custom"
+    else:
+        display_key = period_key
 
     results = []
     for cat_name, cat_data in index.items():
         stock_ids = [s["id"] for s in cat_data["stocks"]]
         market_types = [s["type"] for s in cat_data["stocks"]]
 
-        # 僅取前 15 檔代表性個股計算（避免過慢）
-        returns = get_industry_returns(stock_ids, market_types, max_stocks=15)
+        returns = get_industry_returns(stock_ids, market_types, max_stocks=15,
+                                       custom_start=custom_start, custom_end=custom_end)
         heat = get_industry_heat(stock_ids, market_types, max_stocks=15)
 
         results.append({
             "產業": cat_name,
             "圖示": cat_data["icon"],
             "個股數": cat_data["count"],
-            "區間漲跌(%)": returns.get(period_key),
+            "區間漲跌(%)": returns.get(display_key),
             "熱度(%)": heat,
-            "1週(%)": returns.get("1w"),
-            "1月(%)": returns.get("1m"),
-            "3月(%)": returns.get("3m"),
-            "6月(%)": returns.get("6m"),
-            "1年(%)": returns.get("1y"),
+            "today_ret": returns.get("today"),
+            "prev_ret": returns.get("prev"),
+            "5d_ret": returns.get("5d"),
+            "10d_ret": returns.get("10d"),
+            "1w_ret": returns.get("1w"),
+            "1m_ret": returns.get("1m"),
+            "3m_ret": returns.get("3m"),
+            "6m_ret": returns.get("6m"),
+            "1y_ret": returns.get("1y"),
         })
 
     return pd.DataFrame(results).sort_values("熱度(%)", ascending=False)
 
 
-def render_heat_overview(df, period_key, period_name):
+def render_heat_overview(df, period_key, period_name, use_custom=False, custom_start=None, custom_end=None):
     """渲染產業總覽頁面——熱度排行榜。"""
-    st.title("🔥 台灣股市產業熱度排行榜")
+    # 顯示區間 title
+    if use_custom and custom_start and custom_end:
+        title_period = f"{custom_start} ~ {custom_end}"
+        st.title(f"🔥 台灣股市產業熱度排行榜（{title_period}）")
+    else:
+        st.title(f"🔥 台灣股市產業熱度排行榜（{period_name}）")
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -128,6 +158,24 @@ def render_heat_overview(df, period_key, period_name):
     with col3:
         top_industry = df.iloc[0]["產業"] if len(df) > 0 else "N/A"
         st.metric("🏆 最熱產業", top_industry)
+
+    # 各區間快速摘要
+    st.markdown("---")
+    st.subheader("📊 各區間全市場平均漲跌幅")
+    period_labels = {
+        "today_ret": "當日", "prev_ret": "前日", "5d_ret": "近五日", "10d_ret": "近十日",
+        "1w_ret": "1週", "1m_ret": "1月", "3m_ret": "3月", "6m_ret": "6月", "1y_ret": "1年",
+    }
+    chips = st.columns(len(period_labels))
+    for i, (col, label) in enumerate(zip(chips, period_labels.items())):
+        avg_val = df[label].mean()
+        with col:
+            color = "green" if (avg_val and avg_val > 0) else "red" if avg_val else "gray"
+            st.metric(
+                period_labels[label],
+                f"{avg_val:+.2f}%" if pd.notna(avg_val) else "N/A",
+                delta_color="normal" if (avg_val and avg_val > 0) else "inverse",
+            )
 
     st.markdown("---")
 
@@ -161,7 +209,6 @@ def render_heat_overview(df, period_key, period_name):
         return ""
 
     display_df = df.copy()
-    # 直接用原始數值 column 做顏色，最後再用 format 統一套用顯示格式
     display_cols = ["圖示", "產業", "個股數", "熱度(%)", "區間漲跌(%)"]
 
     styled = (
@@ -328,12 +375,16 @@ def main():
     if "explore_industry" not in st.session_state:
         st.session_state["explore_industry"] = None
 
-    mode, period, period_key, selected_industry = render_sidebar()
+    mode, period, period_key, selected_industry, use_custom, custom_start, custom_end = render_sidebar()
     index = load_industry_data()
 
+    # 格式化自訂日期
+    custom_start_str = custom_start.strftime("%Y-%m-%d") if custom_start else None
+    custom_end_str = custom_end.strftime("%Y-%m-%d") if custom_end else None
+
     if mode == "🔥 產業總覽（熱度排行）":
-        df = compute_industry_heatmap(period_key)
-        render_heat_overview(df, period_key, period)
+        df = compute_industry_heatmap(period_key, custom_start_str, custom_end_str)
+        render_heat_overview(df, period_key, period, use_custom, custom_start_str, custom_end_str)
 
     elif mode == "🏭 產業分類瀏覽":
         render_industry_explorer(index, selected_industry)
