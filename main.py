@@ -164,13 +164,13 @@ def render_heat_overview(df, period_key, period_name):
     display_df["熱度"] = display_df["熱度(%)"].apply(
         lambda x: f"🔥 {x:+.1f}%" if x > 0 else f"❄️ {x:+.1f}%" if x is not None else "—"
     )
-    display_cols = ["圖示", "產業", "個股數", "熱度", f"{period_name}漲跌(%)"]
+    display_cols = ["圖示", "產業", "個股數", "熱度", "區間漲跌(%)"]
 
     styled = (
         display_df[display_cols]
-        .style.map(color_return, subset=[f"{period_name}漲跌(%)"])
+        .style.map(color_return, subset=["區間漲跌(%)"])
         .map(color_heat, subset=["熱度"])
-        .format({f"{period_name}漲跌(%)": "{:+.2f}"})
+        .format({"區間漲跌(%)": "{:+.2f}"})
     )
     st.dataframe(styled, use_container_width=True, height=600)
 
