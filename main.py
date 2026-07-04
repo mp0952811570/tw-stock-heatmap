@@ -98,8 +98,9 @@ def render_sidebar():
 
 
 # ─── 產業熱度排行 ───────────────────────────────────────
+# IMPORTANT: cache key includes _v2 so old cached DataFrames with different columns are invalidated
 @st.cache_data(ttl=1800, show_spinner="正在計算各產業熱度與漲跌幅...")
-def compute_industry_heatmap(period_key: str, custom_start: str = None, custom_end: str = None):
+def compute_industry_heatmap(period_key: str, custom_start: str = None, custom_end: str = None, _cache_version: int = 2):
     """計算所有產業的熱度與漲跌幅。支援固定區間或自訂日期範圍。"""
     stocks = fetch_industry_data()
     index = build_industry_index(stocks)
@@ -167,12 +168,11 @@ def render_heat_overview(df, period_key, period_name, use_custom=False, custom_s
         "1w_ret": "1週", "1m_ret": "1月", "3m_ret": "3月", "6m_ret": "6月", "1y_ret": "1年",
     }
     chips = st.columns(len(period_labels))
-    for i, (col, label) in enumerate(zip(chips, period_labels.items())):
-        avg_val = df[label].mean()
-        with col:
-            color = "green" if (avg_val and avg_val > 0) else "red" if avg_val else "gray"
+    for chip_col, (df_key, display_name) in zip(chips, period_labels.items()):
+        avg_val = df[df_key].mean()
+        with chip_col:
             st.metric(
-                period_labels[label],
+                display_name,
                 f"{avg_val:+.2f}%" if pd.notna(avg_val) else "N/A",
                 delta_color="normal" if (avg_val and avg_val > 0) else "inverse",
             )
