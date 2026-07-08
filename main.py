@@ -1,11 +1,13 @@
 """
 台灣股票產業熱度分析儀表板 — Streamlit 主程式
+Tailwind-inspired 美化版
 """
 
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 import time
+import os
 
 # 頁面設定
 st.set_page_config(
@@ -14,6 +16,13 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ─── 注入自訂 CSS ──────────────────────────────────────────
+_css_path = os.path.join(os.path.dirname(__file__), "static", "style.css")
+if os.path.exists(_css_path):
+    with open(_css_path) as f:
+        _custom_css = f.read()
+    st.markdown(f"<style>{_custom_css}</style>", unsafe_allow_html=True)
 
 from modules.industry import (
     fetch_industry_data,
@@ -85,14 +94,41 @@ def render_sidebar():
         )
 
         st.markdown("---")
-        st.markdown(
-            "📌 **資料來源**\n\n"
-            "- FinMind API（產業分類）\n"
-            "- Yahoo Finance（股價）\n"
-            "- twstock（即時行情）\n"
-            "- Google News（新聞）"
-        )
-        st.markdown("🐙 [GitHub](https://github.com) · Streamlit Cloud")
+        # 資料來源卡片
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        ">
+            <div style="font-weight: 700; color: #93c5fd; margin-bottom: 0.5rem; font-size: 0.9rem;">📌 資料來源</div>
+            <ul style="margin: 0; padding-left: 1.2rem; color: #94a3b8; font-size: 0.8rem; line-height: 1.6;">
+                <li>FinMind API（產業分類）</li>
+                <li>Yahoo Finance（股價）</li>
+                <li>twstock（即時行情）</li>
+                <li>Google News（新聞）</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # GitHub 連結卡片
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.1));
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 0.75rem;
+            padding: 0.8rem 1rem;
+            text-align: center;
+            margin-top: 0.6rem;
+        ">
+            <a href="https://github.com/mp0952811570/tw-stock-heatmap"
+               style="color: #60a5fa; text-decoration: none; font-weight: 600; font-size: 0.85rem;">
+                🐙 GitHub Repo · Streamlit Cloud
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
 
         return mode, period, period_key, selected_industry, use_custom, custom_start, custom_end
 
@@ -145,9 +181,30 @@ def render_heat_overview(df, period_key, period_name, use_custom=False, custom_s
     # 顯示區間 title
     if use_custom and custom_start and custom_end:
         title_period = f"{custom_start} ~ {custom_end}"
-        st.title(f"🔥 台灣股市產業熱度排行榜（{title_period}）")
+        title_text = f"🔥 台灣股市產業熱度排行榜（{title_period}）"
     else:
-        st.title(f"🔥 台灣股市產業熱度排行榜（{period_name}）")
+        title_text = f"🔥 台灣股市產業熱度排行榜（{period_name}）"
+
+    # Banner header
+    st.markdown(f"""
+    <div style="
+        background: linear-gradient(135deg, #1e293b 0%, #312e81 50%, #1e293b 100%);
+        border: 1px solid rgba(59,130,246,0.3);
+        border-radius: 1rem;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 0 20px rgba(59,130,246,0.1);
+    ">
+        <h1 style="
+            margin: 0;
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #60a5fa, #8b5cf6, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        ">{title_text}</h1>
+    </div>
+    """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -179,33 +236,33 @@ def render_heat_overview(df, period_key, period_name, use_custom=False, custom_s
 
     st.markdown("---")
 
-    # 顏色編碼表格
+    # 顏色編碼表格 — Tailwind 色階
     def color_heat(val):
         if pd.isna(val):
             return ""
         if val > 20:
-            return "background-color: #ff4500; color: white"
+            return "background-color: #dc2626; color: white; font-weight: 600"
         elif val > 10:
-            return "background-color: #ff8c00; color: white"
+            return "background-color: #f97316; color: white; font-weight: 500"
         elif val > 0:
-            return "background-color: #ffd700"
+            return "background-color: #fbbf24; color: #78350f"
         elif val < -10:
-            return "background-color: #4169e1; color: white"
+            return "background-color: #2563eb; color: white; font-weight: 600"
         elif val < 0:
-            return "background-color: #87cefa"
+            return "background-color: #93c5fd; color: #1e3a8a"
         return ""
 
     def color_return(val):
         if pd.isna(val):
             return ""
         if val > 5:
-            return "background-color: #ff6b6b; color: white"
+            return "background-color: #ef4444; color: white; font-weight: 600"
         elif val > 0:
-            return "background-color: #ffb3b3"
+            return "background-color: #fecaca; color: #7f1d1d"
         elif val < -5:
-            return "background-color: #4ecdc4; color: white"
+            return "background-color: #2dd4bf; color: white; font-weight: 600"
         elif val < 0:
-            return "background-color: #b3e5e0"
+            return "background-color: #99f6e4; color: #134e4a"
         return ""
 
     display_df = df.copy()
@@ -361,12 +418,37 @@ def render_news(index, selected_industry):
         return
 
     for n in news:
-        with st.container():
-            st.markdown(f"### [{n['title']}]({n['url']})")
-            st.caption(f"📌 {n['source']} · {n['published']} · 相關: {n.get('related_stock', '')}")
-            if n.get("snippet"):
-                st.markdown(n["snippet"])
-            st.markdown("---")
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 1px solid #334155;
+            border-left: 4px solid #3b82f6;
+            border-radius: 0.75rem;
+            padding: 1.2rem 1.5rem;
+            margin: 0.8rem 0;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        " onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='translateX(4px)';"
+          onmouseout="this.style.borderColor='#334155'; this.style.transform='translateX(0)';">
+            <a href="{n['url']}" target="_blank" style="
+                color: #60a5fa;
+                text-decoration: none;
+                font-size: 1.05rem;
+                font-weight: 700;
+            ">{n['title']}</a>
+            <div style="
+                color: #94a3b8;
+                font-size: 0.8rem;
+                margin-top: 0.4rem;
+            ">📌 {n['source']} · {n['published']} · 相關: {n.get('related_stock', '')}</div>
+            <div style="
+                color: #cbd5e1;
+                font-size: 0.85rem;
+                margin-top: 0.5rem;
+                line-height: 1.5;
+            ">{n.get('snippet', '')}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 # ─── 主程式入口 ───────────────────────────────────────────

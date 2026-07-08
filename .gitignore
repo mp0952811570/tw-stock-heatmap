@@ -5,4 +5,5 @@ __pycache__/
 .venv/
 *.egg-info/
 dist/
-build/.ghtoken
+build/
+.ghtoken
