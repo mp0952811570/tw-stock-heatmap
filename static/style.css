@@ -1,61 +1,63 @@
 /* ============================================================
-   Tailwind-inspired 美化樣式 — 台灣股票產業熱度儀表板
+   台灣股票產業熱度儀表板 — 暖色金融風
+   配色：深墨綠底 + 金黃/暖橙 accent + 高對比文字
    ============================================================ */
 
 /* ─── 全域 Root 變數 ─────────────────────────────────────── */
 :root {
-    --tw-bg: #0f172a;
-    --tw-surface: #1e293b;
-    --tw-surface-hover: #334155;
-    --tw-primary: #3b82f6;
-    --tw-primary-light: #60a5fa;
-    --tw-primary-dark: #2563eb;
-    --tw-accent: #8b5cf6;
-    --tw-success: #10b981;
-    --tw-danger: #ef4444;
-    --tw-warning: #f59e0b;
-    --tw-text: #f1f5f9;
-    --tw-text-muted: #94a3b8;
-    --tw-border: #334155;
-    --tw-radius: 0.75rem;
-    --tw-radius-lg: 1rem;
-    --tw-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
-    --tw-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.2);
-    --tw-shadow-glow: 0 0 20px rgba(59,130,246,0.15);
+    --bg-main: #1a1f2e;
+    --bg-surface: #232a3f;
+    --bg-elevated: #2d3556;
+    --accent: #f0b90b;          /* 幣安金黃 */
+    --accent-light: #fcd535;
+    --accent-dark: #d49b0a;
+    --accent-2: #e67e22;        /* 暖橙 */
+    --accent-3: #2ecc71;        /* 翠綠 */
+    --danger: #e74c3c;
+    --danger-light: #ff6b6b;
+    --success: #27ae60;
+    --text-bright: #ffffff;
+    --text-primary: #f5f5f5;
+    --text-secondary: #d5d8e0;
+    --text-muted: #b0b8c8;
+    --border: #3a4263;
+    --border-light: #4a5380;
+    --radius: 0.5rem;
+    --radius-lg: 0.75rem;
+    --shadow: 0 2px 8px rgba(0,0,0,0.25);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.35);
+    --shadow-glow: 0 0 16px rgba(240,185,11,0.12);
 }
 
-/* ─── 底層背景漸層 ───────────────────────────────────────── */
+/* ─── 底層背景 ───────────────────────────────────────────── */
 .stApp {
-    background: linear-gradient(180deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-    color: var(--tw-text);
+    background: #1a1f2e;
+    color: var(--text-primary);
 }
 
-/* ─── 主區塊容器 ─────────────────────────────────────────── */
-.stApp > .main {
-    padding: 2rem 3rem;
-}
-
-/* ─── 標題美化 ───────────────────────────────────────────── */
+/* ─── 主標題 ─────────────────────────────────────────────── */
 h1 {
-    background: linear-gradient(135deg, #60a5fa 0%, #8b5cf6 50%, #3b82f6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--accent) !important;
     font-weight: 800 !important;
     letter-spacing: 0.5px;
     padding-bottom: 0.5rem;
-    border-bottom: 2px solid rgba(59,130,246,0.2);
+    border-bottom: 2px solid rgba(240,185,11,0.25);
 }
 
 h2, h3 {
-    color: #e2e8f0 !important;
+    color: var(--text-bright) !important;
     font-weight: 700 !important;
+}
+
+h3 {
+    font-size: 1.05rem !important;
+    margin-bottom: 0.3rem;
 }
 
 /* ─── 側邊欄 ─────────────────────────────────────────────── */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #1e293b 0%, #1e293b 100%);
-    border-right: 1px solid rgba(59,130,246,0.15);
+    background: #232a3f;
+    border-right: 1px solid var(--border);
 }
 
 section[data-testid="stSidebar"] > div {
@@ -64,90 +66,87 @@ section[data-testid="stSidebar"] > div {
 
 /* 側邊欄標題 */
 section[data-testid="stSidebar"] h1 {
-    background: linear-gradient(135deg, #60a5fa, #8b5cf6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-size: 1.5rem !important;
+    color: var(--accent) !important;
+    font-size: 1.4rem !important;
     border-bottom: none;
 }
 
 /* 側邊欄 radio 按鈕 */
 div[role="radiogroup"] label {
-    background: rgba(30,41,59,0.8);
-    border: 1px solid rgba(59,130,246,0.2);
-    border-radius: var(--tw-radius) !important;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: var(--radius) !important;
     padding: 0.6rem 1rem !important;
     margin: 0.3rem 0 !important;
     transition: all 0.2s ease;
-    color: #cbd5e1 !important;
+    color: var(--text-secondary) !important;
     font-weight: 500;
 }
 
 div[role="radiogroup"] label:hover {
-    background: rgba(59,130,246,0.15);
-    border-color: var(--tw-primary);
+    background: rgba(240,185,11,0.12);
+    border-color: var(--accent);
     transform: translateX(4px);
-    color: var(--tw-primary-light) !important;
+    color: var(--accent-light) !important;
 }
 
 div[role="radiogroup"] label[data-checked="true"] {
-    background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(139,92,246,0.2));
-    border-color: var(--tw-primary);
-    color: #fff !important;
-    box-shadow: var(--tw-shadow-glow);
+    background: linear-gradient(135deg, rgba(240,185,11,0.25), rgba(230,126,34,0.15));
+    border-color: var(--accent);
+    color: var(--text-bright) !important;
+    box-shadow: var(--shadow-glow);
 }
 
 /* 側邊欄 selectbox */
 .stSelectbox > div > div {
-    background: var(--tw-surface);
-    border: 1px solid var(--tw-border);
-    border-radius: var(--tw-radius) !important;
-    color: var(--tw-text);
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: var(--radius) !important;
+    color: var(--text-primary);
 }
 
 .stSelectbox > div > div:hover {
-    border-color: var(--tw-primary);
+    border-color: var(--accent);
 }
 
 /* 側邊欄 checkbox */
 .stCheckbox label {
-    color: #cbd5e1 !important;
+    color: var(--text-secondary) !important;
     padding: 0.3rem 0;
-    border-radius: var(--tw-radius);
+    border-radius: var(--radius);
     transition: all 0.2s ease;
 }
 
 .stCheckbox label:hover {
-    color: var(--tw-primary-light) !important;
+    color: var(--accent-light) !important;
 }
 
 /* date_input */
 .stDateInput > div > div > input {
-    background: var(--tw-surface);
-    border: 1px solid var(--tw-border);
-    border-radius: var(--tw-radius) !important;
-    color: var(--tw-text) !important;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    border-radius: var(--radius) !important;
+    color: var(--text-primary) !important;
 }
 
 /* ─── Metric 卡片 ────────────────────────────────────────── */
 [data-testid="stMetric"] {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border: 1px solid var(--tw-border);
-    border-radius: var(--tw-radius-lg) !important;
+    background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-main) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg) !important;
     padding: 1.2rem !important;
-    box-shadow: var(--tw-shadow);
+    box-shadow: var(--shadow);
     transition: all 0.3s ease;
 }
 
 [data-testid="stMetric"]:hover {
     transform: translateY(-2px);
-    box-shadow: var(--tw-shadow-lg), var(--tw-shadow-glow);
-    border-color: var(--tw-primary);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--accent);
 }
 
 [data-testid="stMetric"] label {
-    color: var(--tw-text-muted) !important;
+    color: var(--text-muted) !important;
     font-size: 0.85rem !important;
     font-weight: 600;
     text-transform: uppercase;
@@ -155,41 +154,36 @@ div[role="radiogroup"] label[data-checked="true"] {
 }
 
 [data-testid="stMetric"] [data-testid="stMetricValue"] {
-    color: var(--tw-text) !important;
+    color: var(--text-bright) !important;
     font-size: 1.8rem !important;
     font-weight: 700;
 }
 
-/* delta 正負色 */
-[data-testid="stMetricDelta"] > div[data-testid="stMetricDeltaSVG"] svg {
-    width: 1.2rem;
-}
-
 /* ─── DataFrame 表格 ─────────────────────────────────────── */
 .stDataFrame {
-    border-radius: var(--tw-radius-lg);
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    box-shadow: var(--tw-shadow);
+    box-shadow: var(--shadow);
 }
 
 .stDataFrame > div > div {
-    border-radius: var(--tw-radius-lg) !important;
-    border: 1px solid var(--tw-border) !important;
+    border-radius: var(--radius-lg) !important;
+    border: 1px solid var(--border) !important;
     overflow: hidden;
 }
 
 .stDataFrame table {
-    border-radius: var(--tw-radius-lg) !important;
-    background: var(--tw-surface) !important;
+    border-radius: var(--radius-lg) !important;
+    background: var(--bg-surface) !important;
 }
 
 .stDataFrame thead tr th {
-    background: linear-gradient(135deg, #1e293b, #334155) !important;
-    color: #93c5fd !important;
+    background: linear-gradient(135deg, var(--bg-elevated), var(--bg-surface)) !important;
+    color: var(--accent) !important;
     font-weight: 700 !important;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-bottom: 2px solid var(--tw-primary) !important;
+    border-bottom: 2px solid var(--accent) !important;
 }
 
 .stDataFrame tbody tr {
@@ -197,51 +191,45 @@ div[role="radiogroup"] label[data-checked="true"] {
 }
 
 .stDataFrame tbody tr:hover {
-    background: rgba(59,130,246,0.08) !important;
+    background: rgba(240,185,11,0.08) !important;
 }
 
 .stDataFrame tbody td {
-    color: #e2e8f0;
+    color: var(--text-primary);
 }
 
-/* ─── 產業卡片（分類瀏覽模式） ───────────────────────────── */
+/* ─── 產業卡片 ───────────────────────────────────────────── */
 div[data-testid="stHorizontalBlock"] > div > div:has(h3) {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border: 1px solid var(--tw-border);
-    border-radius: var(--tw-radius-lg);
+    background: linear-gradient(135deg, var(--bg-surface), var(--bg-main));
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     padding: 1.2rem !important;
     margin: 0.5rem 0;
-    box-shadow: var(--tw-shadow);
+    box-shadow: var(--shadow);
     transition: all 0.3s ease;
 }
 
 div[data-testid="stHorizontalBlock"] > div > div:has(h3):hover {
-    border-color: var(--tw-primary);
-    box-shadow: var(--tw-shadow-lg), var(--tw-shadow-glow);
+    border-color: var(--accent);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
     transform: translateY(-3px);
 }
 
-/* 產業卡片標題 */
-h3 {
-    font-size: 1.1rem !important;
-    margin-bottom: 0.3rem;
-}
-
-/* ─── 按鈕美化 ───────────────────────────────────────────── */
+/* ─── 按鈕 ───────────────────────────────────────────────── */
 .stButton > button {
-    background: linear-gradient(135deg, var(--tw-primary), var(--tw-primary-dark)) !important;
-    color: #fff !important;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark)) !important;
+    color: #1a1f2e !important;
     border: none !important;
-    border-radius: var(--tw-radius) !important;
+    border-radius: var(--radius) !important;
     padding: 0.5rem 1.5rem !important;
-    font-weight: 600;
+    font-weight: 700;
     transition: all 0.25s ease;
-    box-shadow: 0 2px 4px rgba(59,130,246,0.3);
+    box-shadow: 0 2px 4px rgba(240,185,11,0.3);
 }
 
 .stButton > button:hover {
-    background: linear-gradient(135deg, var(--tw-primary-light), var(--tw-primary)) !important;
-    box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+    background: linear-gradient(135deg, var(--accent-light), var(--accent)) !important;
+    box-shadow: 0 4px 12px rgba(240,185,11,0.4);
     transform: translateY(-1px);
 }
 
@@ -249,121 +237,109 @@ h3 {
     transform: translateY(0);
 }
 
-/* ─── Expander 美化 ──────────────────────────────────────── */
+/* ─── Expander ───────────────────────────────────────────── */
 .streamlit-expanderHeader {
-    background: linear-gradient(135deg, #1e293b, #334155) !important;
-    border-radius: var(--tw-radius) !important;
+    background: linear-gradient(135deg, var(--bg-surface), var(--bg-elevated)) !important;
+    border-radius: var(--radius) !important;
     font-weight: 600;
-    color: #93c5fd !important;
-    border: 1px solid var(--tw-border);
+    color: var(--accent) !important;
+    border: 1px solid var(--border);
 }
 
 .streamlit-expanderHeader:hover {
-    border-color: var(--tw-primary);
+    border-color: var(--accent);
 }
 
 details[data-testid="stExpander"] {
-    border: 1px solid var(--tw-border) !important;
-    border-radius: var(--tw-radius-lg) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-lg) !important;
     overflow: hidden;
-    background: rgba(15,23,42,0.5);
+    background: var(--bg-main);
 }
 
 /* ─── 分隔線 ─────────────────────────────────────────────── */
 hr {
     border: none !important;
     height: 1px !important;
-    background: linear-gradient(90deg, transparent, rgba(59,130,246,0.3), transparent) !important;
+    background: linear-gradient(90deg, transparent, rgba(240,185,11,0.25), transparent) !important;
     margin: 1.5rem 0 !important;
 }
 
 /* ─── Spinner ────────────────────────────────────────────── */
 .stSpinner > div {
-    border-top-color: var(--tw-primary) !important;
+    border-top-color: var(--accent) !important;
 }
 
 /* ─── 警告/資訊框 ────────────────────────────────────────── */
 .stAlert {
-    border-radius: var(--tw-radius) !important;
-    border: 1px solid;
-}
-
-.stAlert > div[data-baseweb-notification="info"] {
-    background: rgba(59,130,246,0.1) !important;
-    border-color: var(--tw-primary) !important;
-}
-
-.stAlert > div[data-baseweb-notification="warning"] {
-    background: rgba(245,158,11,0.1) !important;
-    border-color: var(--tw-warning) !important;
+    border-radius: var(--radius) !important;
 }
 
 /* ─── Caption / 說明文字 ────────────────────────────────── */
-.stCaption > p, .stMarkdown p {
-    color: var(--tw-text-muted) !important;
+.stCaption > p, .stCaption {
+    color: var(--text-muted) !important;
 }
 
-/* ─── 熱度排行榜domain特定樣式 ─────────────────────────── */
-.stMarkdown table {
-    border-radius: var(--tw-radius);
-    overflow: hidden;
+/* 段落文字 — 提升對比度 */
+.stMarkdown p {
+    color: var(--text-secondary) !important;
 }
 
-/* ─── 新聞卡片樣式 ──────────────────────────────────────── */
+/* ─── 連結 ──────────────────────────────────────────────── */
 .stMarkdown h3 a {
-    color: var(--tw-primary-light) !important;
+    color: var(--accent-light) !important;
     text-decoration: none;
     transition: color 0.2s ease;
 }
 
 .stMarkdown h3 a:hover {
-    color: var(--tw-accent) !important;
+    color: var(--accent-2) !important;
     text-decoration: underline;
 }
 
-/* ─── 滾動條美化 ────────────────────────────────────────── */
+/* ─── 滾動條 ─────────────────────────────────────────────── */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #1e293b;
+    background: var(--bg-surface);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, var(--tw-primary), var(--tw-primary-dark));
+    background: var(--accent-dark);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--tw-primary-light);
+    background: var(--accent);
 }
 
-/* ─── Tabs 美化（如果有用到） ───────────────────────────── */
+/* ─── Tabs ───────────────────────────────────────────────── */
 .stTabs [data-baseweb="tab-list"] {
     gap: 0.5rem;
 }
 
 .stTabs [data-baseweb="tab"] {
-    background: var(--tw-surface);
-    border-radius: var(--tw-radius) var(--tw-radius) 0 0;
+    background: var(--bg-main);
+    border-radius: var(--radius) var(--radius) 0 0;
     padding: 0.5rem 1.5rem !important;
-    color: var(--tw-text-muted) !important;
-    border: 1px solid var(--tw-border);
+    color: var(--text-muted) !important;
+    border: 1px solid var(--border);
     font-weight: 600;
     transition: all 0.2s ease;
 }
 
 .stTabs [data-baseweb="tab"]:hover {
-    color: var(--tw-primary-light) !important;
-    border-color: var(--tw-primary);
+    color: var(--accent-light) !important;
+    border-color: var(--accent);
 }
 
 .stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.1)) !important;
-    color: #fff !important;
-    border-bottom: 3px solid var(--tw-primary) !important;
+    background: linear-gradient(135deg, rgba(240,185,11,0.2), rgba(230,126,34,0.1)) !important;
+    color: var(--text-bright) !important;
+    border-bottom: 3px solid var(--accent) !important;
 }
 
 /* ─── 動畫 ──────────────────────────────────────────────── */
@@ -373,21 +349,18 @@ hr {
 }
 
 [data-testid="stMetric"],
-.stButton > button,
-.stMarkdown {
+.stButton > button {
     animation: fadeInUp 0.4s ease-out;
 }
 
-/* ─── 響應式調整 ────────────────────────────────────────── */
+/* ─── 響應式 ────────────────────────────────────────────── */
 @media (max-width: 768px) {
     .stApp > .main {
         padding: 1rem;
     }
-
     [data-testid="stMetric"] {
         padding: 0.8rem !important;
     }
-
     [data-testid="stMetric"] [data-testid="stMetricValue"] {
         font-size: 1.4rem !important;
     }

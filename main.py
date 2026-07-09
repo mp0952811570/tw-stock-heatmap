@@ -97,14 +97,14 @@ def render_sidebar():
         # 資料來源卡片
         st.markdown("""
         <div style="
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            border: 1px solid #334155;
-            border-radius: 0.75rem;
+            background: linear-gradient(135deg, #232a3f, #1a1f2e);
+            border: 1px solid #3a4263;
+            border-radius: 0.5rem;
             padding: 1rem;
             margin-top: 0.5rem;
         ">
-            <div style="font-weight: 700; color: #93c5fd; margin-bottom: 0.5rem; font-size: 0.9rem;">📌 資料來源</div>
-            <ul style="margin: 0; padding-left: 1.2rem; color: #94a3b8; font-size: 0.8rem; line-height: 1.6;">
+            <div style="font-weight: 700; color: #f0b90b; margin-bottom: 0.5rem; font-size: 0.9rem;">📌 資料來源</div>
+            <ul style="margin: 0; padding-left: 1.2rem; color: #b0b8c8; font-size: 0.8rem; line-height: 1.6;">
                 <li>FinMind API（產業分類）</li>
                 <li>Yahoo Finance（股價）</li>
                 <li>twstock（即時行情）</li>
@@ -116,15 +116,15 @@ def render_sidebar():
         # GitHub 連結卡片
         st.markdown("""
         <div style="
-            background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.1));
-            border: 1px solid rgba(59,130,246,0.3);
-            border-radius: 0.75rem;
+            background: linear-gradient(135deg, rgba(240,185,11,0.15), rgba(230,126,34,0.1));
+            border: 1px solid rgba(240,185,11,0.3);
+            border-radius: 0.5rem;
             padding: 0.8rem 1rem;
             text-align: center;
             margin-top: 0.6rem;
         ">
             <a href="https://github.com/mp0952811570/tw-stock-heatmap"
-               style="color: #60a5fa; text-decoration: none; font-weight: 600; font-size: 0.85rem;">
+               style="color: #f0b90b; text-decoration: none; font-weight: 600; font-size: 0.85rem;">
                 🐙 GitHub Repo · Streamlit Cloud
             </a>
         </div>
@@ -188,20 +188,18 @@ def render_heat_overview(df, period_key, period_name, use_custom=False, custom_s
     # Banner header
     st.markdown(f"""
     <div style="
-        background: linear-gradient(135deg, #1e293b 0%, #312e81 50%, #1e293b 100%);
-        border: 1px solid rgba(59,130,246,0.3);
-        border-radius: 1rem;
+        background: linear-gradient(135deg, #232a3f 0%, #2d3556 50%, #1a1f2e 100%);
+        border: 1px solid rgba(240,185,11,0.25);
+        border-radius: 0.75rem;
         padding: 1.5rem 2rem;
         margin-bottom: 1.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 0 20px rgba(59,130,246,0.1);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 0 20px rgba(240,185,11,0.08);
     ">
         <h1 style="
             margin: 0;
             font-size: 1.8rem;
-            background: linear-gradient(135deg, #60a5fa, #8b5cf6, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #f0b90b;
+            -webkit-text-fill-color: #f0b90b;
         ">{title_text}</h1>
     </div>
     """, unsafe_allow_html=True)
@@ -236,33 +234,33 @@ def render_heat_overview(df, period_key, period_name, use_custom=False, custom_s
 
     st.markdown("---")
 
-    # 顏色編碼表格 — Tailwind 色階
+    # 顏色編碼表格 — 台股慣例：紅漲綠跌
     def color_heat(val):
         if pd.isna(val):
             return ""
         if val > 20:
-            return "background-color: #dc2626; color: white; font-weight: 600"
+            return "background-color: #e74c3c; color: white; font-weight: 600"
         elif val > 10:
-            return "background-color: #f97316; color: white; font-weight: 500"
+            return "background-color: #ff7878; color: white; font-weight: 500"
         elif val > 0:
-            return "background-color: #fbbf24; color: #78350f"
+            return "background-color: #ffccc9; color: #7a1f1f"
         elif val < -10:
-            return "background-color: #2563eb; color: white; font-weight: 600"
+            return "background-color: #2ecc71; color: white; font-weight: 600"
         elif val < 0:
-            return "background-color: #93c5fd; color: #1e3a8a"
+            return "background-color: #a8f0c4; color: #14532d"
         return ""
 
     def color_return(val):
         if pd.isna(val):
             return ""
         if val > 5:
-            return "background-color: #ef4444; color: white; font-weight: 600"
+            return "background-color: #e74c3c; color: white; font-weight: 600"
         elif val > 0:
-            return "background-color: #fecaca; color: #7f1d1d"
+            return "background-color: #ffccc9; color: #7a1f1f"
         elif val < -5:
-            return "background-color: #2dd4bf; color: white; font-weight: 600"
+            return "background-color: #2ecc71; color: white; font-weight: 600"
         elif val < 0:
-            return "background-color: #99f6e4; color: #134e4a"
+            return "background-color: #a8f0c4; color: #14532d"
         return ""
 
     display_df = df.copy()
@@ -283,20 +281,24 @@ def render_heat_overview(df, period_key, period_name, use_custom=False, custom_s
 # ─── 產業分類瀏覽 ─────────────────────────────────────────
 def render_industry_explorer(index, selected_industry):
     """渲染產業分類瀏覽頁面——可下鑽到個股。"""
-    st.title(f"🏭 產業分類瀏覽")
+    # 決定要顯示哪個產業：優先用 session_state（卡片按鈕），否則用下拉選單
+    cat_name = st.session_state.get("explore_industry") or (
+        selected_industry if selected_industry != "全部" else None
+    )
 
-    if selected_industry == "全部":
+    if cat_name is None:
         # 顯示所有產業的卡片式總覽
+        st.title("🏭 產業分類瀏覽")
         cols = st.columns(3)
         sorted_industries = sorted(index.items(), key=lambda x: x[1]["count"], reverse=True)
 
-        for i, (cat_name, cat_data) in enumerate(sorted_industries):
+        for i, (name, cat_data) in enumerate(sorted_industries):
             with cols[i % 3]:
                 chain = cat_data["chain"]
                 has_chain = bool(chain.get("上游") or chain.get("中游") or chain.get("下游"))
 
                 st.markdown(
-                    f"### {cat_data['icon']} {cat_name}\n"
+                    f"### {cat_data['icon']} {name}\n"
                     f"*{cat_data['count']} 檔個股*"
                 )
                 if has_chain:
@@ -305,19 +307,18 @@ def render_industry_explorer(index, selected_industry):
                         f"中游：{'、'.join(chain['中游'][:3]) or '—'}\n\n"
                         f"下游：{'、'.join(chain['下游'][:3]) or '—'}"
                     )
-                if st.button(f"🔍 查看 {cat_name}", key=f"view_{cat_name}"):
-                    st.session_state["explore_industry"] = cat_name
+                if st.button(f"🔍 查看 {name}", key=f"view_{name}"):
+                    st.session_state["explore_industry"] = name
                     st.rerun()
 
-    elif "explore_industry" in st.session_state and st.session_state["explore_industry"]:
-        cat_name = st.session_state["explore_industry"]
+    else:
         cat_data = index.get(cat_name)
 
         if not cat_data:
             st.warning("找不到此產業資料")
             return
 
-        st.subheader(f"{cat_data['icon']} {cat_name} — {cat_data['count']} 檔個股")
+        st.markdown(f"### {cat_data['icon']} {cat_name} — {cat_data['count']} 檔個股")
 
         # 上中下游架構
         chain = cat_data["chain"]
@@ -389,9 +390,6 @@ def render_industry_explorer(index, selected_industry):
             st.session_state["explore_industry"] = None
             st.rerun()
 
-    else:
-        st.info("👈 請從側邊欄選擇一個產業，或點擊上面的產業卡片～")
-
 
 # ─── 產業新聞 ─────────────────────────────────────────────
 def render_news(index, selected_industry):
@@ -420,29 +418,29 @@ def render_news(index, selected_industry):
     for n in news:
         st.markdown(f"""
         <div style="
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            border: 1px solid #334155;
-            border-left: 4px solid #3b82f6;
-            border-radius: 0.75rem;
+            background: linear-gradient(135deg, #232a3f, #1a1f2e);
+            border: 1px solid #3a4263;
+            border-left: 4px solid #f0b90b;
+            border-radius: 0.5rem;
             padding: 1.2rem 1.5rem;
             margin: 0.8rem 0;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
             transition: all 0.3s ease;
-        " onmouseover="this.style.borderColor='#3b82f6'; this.style.transform='translateX(4px)';"
-          onmouseout="this.style.borderColor='#334155'; this.style.transform='translateX(0)';">
+        " onmouseover="this.style.borderColor='#f0b90b'; this.style.transform='translateX(4px)';"
+          onmouseout="this.style.borderColor='#3a4263'; this.style.transform='translateX(0)';">
             <a href="{n['url']}" target="_blank" style="
-                color: #60a5fa;
+                color: #fcd535;
                 text-decoration: none;
                 font-size: 1.05rem;
                 font-weight: 700;
             ">{n['title']}</a>
             <div style="
-                color: #94a3b8;
+                color: #b0b8c8;
                 font-size: 0.8rem;
                 margin-top: 0.4rem;
             ">📌 {n['source']} · {n['published']} · 相關: {n.get('related_stock', '')}</div>
             <div style="
-                color: #cbd5e1;
+                color: #d5d8e0;
                 font-size: 0.85rem;
                 margin-top: 0.5rem;
                 line-height: 1.5;
