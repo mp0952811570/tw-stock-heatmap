@@ -282,8 +282,8 @@ def render_heat_overview(df, period_key, period_name, use_custom=False, custom_s
 
 
 # ─── 產業上中下游熱度比較 ─────────────────────────────────
-@st.cache_data(ttl=1800, show_spinner="正在計算上中下游熱度...")
-def compute_chain_heatmap(industry_name: str, stocks_json: str, _cache_version: int = 1):
+@st.cache_data(ttl=1800, show_spinner="正在計算上中下游熱度（約需 10~30 秒）...")
+def compute_chain_heatmap(industry_name: str, stocks_json: str, _cache_version: int = 2):
     """計算某產業上中下游各段熱度與漲跌幅。"""
     import json as _json
     stocks = _json.loads(stocks_json)
@@ -305,8 +305,9 @@ def compute_chain_heatmap(industry_name: str, stocks_json: str, _cache_version: 
             }
             continue
 
-        heat = get_chain_segment_heat(seg_stocks, max_stocks=15)
-        returns = get_chain_segment_returns(seg_stocks, max_stocks=15)
+        # 只取前 8 檔做計算樣本（加速）
+        heat = get_chain_segment_heat(seg_stocks, max_stocks=8)
+        returns = get_chain_segment_returns(seg_stocks, max_stocks=8)
 
         results[segment] = {
             "count": len(seg_stocks),
@@ -372,9 +373,9 @@ def render_chain_heatmap(chain_data: dict, industry_icon: str, industry_name: st
             count = data["count"]
 
             # 判定熱度顏色
-            if heat_val is None:
+            if heat_val is None or (isinstance(heat_val, float) and heat_val != heat_val):
                 heat_color = "#b0b8c8"
-                heat_bar_width = "0%"
+                heat_bar_width = 0
                 heat_text = "N/A"
             elif heat_val > 10:
                 heat_color = "#e74c3c"
@@ -384,14 +385,41 @@ def render_chain_heatmap(chain_data: dict, industry_icon: str, industry_name: st
                 heat_color = "#f0b90b"
                 heat_bar_width = min(100, int(heat_val * 3))
                 heat_text = f"{heat_val:+.1f}%"
-            else:
+            elif heat_val is not None:
                 heat_color = "#2ecc71"
                 heat_bar_width = min(100, int(abs(heat_val) * 3))
                 heat_text = f"{heat_val:+.1f}%"
+            else:
+                heat_color = "#b0b8c8"
+                heat_bar_width = 0
+                heat_text = "N/A"
 
             is_hottest = (seg == hottest)
             border_color = segment_colors[seg] if is_hottest else "#3a4263"
             glow = "box-shadow: 0 0 16px rgba(240,185,11,0.15);" if is_hottest else ""
+
+            # 當該段沒有個股時，顯示「無資料」卡片
+            if count == 0:
+                st.markdown(f"""
+                <div style="
+                    background: linear-gradient(135deg, #232a3f, #1a1f2e);
+                    border: 2px dashed #3a4263;
+                    border-radius: 0.5rem;
+                    padding: 1rem;
+                    margin: 0.3rem 0;
+                    text-align: center;
+                ">
+                    <div style="font-size: 1.1rem; font-weight: 700; color: #b0b8c8; margin-bottom: 0.3rem;">
+                        {segment_icons[seg]} {seg}
+                    </div>
+                    <div style="color: #6b7280; font-size: 0.8rem;">
+                        無代表性個股
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                continue
+
+            hot_badge = f'<span style="color:#f0b90b;font-size:0.75rem;margin-left:0.3rem;">🏆 最熱</span>' if is_hottest else ''
 
             st.markdown(f"""
             <div style="
@@ -404,7 +432,7 @@ def render_chain_heatmap(chain_data: dict, industry_icon: str, industry_name: st
             ">
                 <div style="font-size: 1.1rem; font-weight: 700; color: #f5f5f5; margin-bottom: 0.3rem;">
                     {segment_icons[seg]} {seg}
-                    {f'<span style="color:#f0b90b;font-size:0.75rem;margin-left:0.3rem;">🏆 最熱</span>' if is_hottest else ''}
+                    {hot_badge}
                 </div>
                 <div style="color: #b0b8c8; font-size: 0.8rem; margin-bottom: 0.6rem;">
                     {count} 檔個股
@@ -417,7 +445,7 @@ def render_chain_heatmap(chain_data: dict, industry_icon: str, industry_name: st
                         <div style="
                             background: {heat_color};
                             height: 100%;
-                            width: {heat_bar_width};
+                            width: {heat_bar_width}%;
                             border-radius: 0.25rem;
                             transition: width 0.5s ease;
                         "></div>
