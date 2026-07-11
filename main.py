@@ -36,8 +36,11 @@ from modules.stock_data import (
     get_industry_returns,
     get_industry_heat,
     get_volume_trend,
+    get_chain_segment_heat,
+    get_chain_segment_returns,
 )
 from modules.news import get_stock_news, get_industry_news
+from modules.chain_classifier import classify_industry_stocks
 
 
 # ─── 快取資料 ────────────────────────────────────────────
@@ -278,6 +281,200 @@ def render_heat_overview(df, period_key, period_name, use_custom=False, custom_s
     st.dataframe(styled, use_container_width=True, height=600)
 
 
+# ─── 產業上中下游熱度比較 ─────────────────────────────────
+@st.cache_data(ttl=1800, show_spinner="正在計算上中下游熱度...")
+def compute_chain_heatmap(industry_name: str, stocks_json: str, _cache_version: int = 1):
+    """計算某產業上中下游各段熱度與漲跌幅。"""
+    import json as _json
+    stocks = _json.loads(stocks_json)
+
+    # 分類到上中下游
+    classified = classify_industry_stocks(stocks, industry_name)
+
+    results = {}
+    for segment in ["上游", "中游", "下游"]:
+        seg_stocks = classified[segment]
+        if not seg_stocks:
+            results[segment] = {
+                "count": 0,
+                "heat": None,
+                "return_1w": None,
+                "return_1m": None,
+                "stocks": [],
+                "labels": [],
+            }
+            continue
+
+        heat = get_chain_segment_heat(seg_stocks, max_stocks=15)
+        returns = get_chain_segment_returns(seg_stocks, max_stocks=15)
+
+        results[segment] = {
+            "count": len(seg_stocks),
+            "heat": heat,
+            "return_1w": returns.get("1w"),
+            "return_1m": returns.get("1m"),
+            "stocks": seg_stocks,
+        }
+
+    results["其他"] = {
+        "count": len(classified["其他"]),
+        "heat": None,
+        "return_1w": None,
+        "return_1m": None,
+        "stocks": classified["其他"],
+    }
+
+    return results
+
+
+def render_chain_heatmap(chain_data: dict, industry_icon: str, industry_name: str):
+    """渲染上中下游熱度比較 visual block。"""
+
+    # 準備三段資料
+    segments = ["上游", "中游", "下游"]
+    segment_icons = {"上游": "⬆️", "中游": "➡️", "下游": "⬇️"}
+    segment_colors = {"上游": "#e67e22", "中游": "#f0b90b", "下游": "#2ecc71"}
+
+    # 找最熱的段
+    heats = {seg: chain_data[seg]["heat"] for seg in segments if chain_data[seg]["heat"] is not None}
+    hottest = max(heats, key=lambda k: heats[k]) if heats else None
+
+    st.markdown("### 🔥 上中下游熱度比較")
+
+    if hottest:
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, rgba(240,185,11,0.15), rgba(230,126,34,0.08));
+            border: 1px solid rgba(240,185,11,0.25);
+            border-radius: 0.5rem;
+            padding: 0.8rem 1.2rem;
+            margin-bottom: 1rem;
+        ">
+            <span style="color: #f0b90b; font-weight: 700; font-size: 1rem;">
+                🏆 最熱段：
+            </span>
+            <span style="color: #f5f5f5; font-weight: 600; font-size: 1rem;">
+                {segment_icons[hottest]} {hottest}
+            </span>
+            <span style="color: #b0b8c8; font-size: 0.9rem;">
+                （熱度 {chain_data[hottest]['heat']:+.1f}%）
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # 三段卡片並列
+    cols = st.columns(3)
+    for i, seg in enumerate(segments):
+        data = chain_data[seg]
+        with cols[i]:
+            heat_val = data["heat"]
+            ret_1w = data["return_1w"]
+            count = data["count"]
+
+            # 判定熱度顏色
+            if heat_val is None:
+                heat_color = "#b0b8c8"
+                heat_bar_width = "0%"
+                heat_text = "N/A"
+            elif heat_val > 10:
+                heat_color = "#e74c3c"
+                heat_bar_width = min(100, int(heat_val * 2))
+                heat_text = f"{heat_val:+.1f}%"
+            elif heat_val > 0:
+                heat_color = "#f0b90b"
+                heat_bar_width = min(100, int(heat_val * 3))
+                heat_text = f"{heat_val:+.1f}%"
+            else:
+                heat_color = "#2ecc71"
+                heat_bar_width = min(100, int(abs(heat_val) * 3))
+                heat_text = f"{heat_val:+.1f}%"
+
+            is_hottest = (seg == hottest)
+            border_color = segment_colors[seg] if is_hottest else "#3a4263"
+            glow = "box-shadow: 0 0 16px rgba(240,185,11,0.15);" if is_hottest else ""
+
+            st.markdown(f"""
+            <div style="
+                background: linear-gradient(135deg, #232a3f, #1a1f2e);
+                border: 2px solid {border_color};
+                border-radius: 0.5rem;
+                padding: 1rem;
+                margin: 0.3rem 0;
+                {glow}
+            ">
+                <div style="font-size: 1.1rem; font-weight: 700; color: #f5f5f5; margin-bottom: 0.3rem;">
+                    {segment_icons[seg]} {seg}
+                    {f'<span style="color:#f0b90b;font-size:0.75rem;margin-left:0.3rem;">🏆 最熱</span>' if is_hottest else ''}
+                </div>
+                <div style="color: #b0b8c8; font-size: 0.8rem; margin-bottom: 0.6rem;">
+                    {count} 檔個股
+                </div>
+
+                <!-- 熱度 bar -->
+                <div style="margin-bottom: 0.5rem;">
+                    <div style="color: #b0b8c8; font-size: 0.75rem; margin-bottom: 0.2rem;">熱度</div>
+                    <div style="background: #1a1f2e; border-radius: 0.25rem; height: 0.6rem; overflow: hidden;">
+                        <div style="
+                            background: {heat_color};
+                            height: 100%;
+                            width: {heat_bar_width};
+                            border-radius: 0.25rem;
+                            transition: width 0.5s ease;
+                        "></div>
+                    </div>
+                    <div style="color: {heat_color}; font-size: 0.9rem; font-weight: 700; margin-top: 0.2rem;">
+                        {heat_text}
+                    </div>
+                </div>
+
+                <!-- 1週漲跌 -->
+                <div style="margin-top: 0.5rem;">
+                    <div style="color: #b0b8c8; font-size: 0.75rem;">1週漲跌</div>
+                    <div style="
+                        color: {'#e74c3c' if ret_1w and ret_1w > 0 else '#2ecc71' if ret_1w else '#b0b8c8'};
+                        font-size: 0.95rem;
+                        font-weight: 700;
+                    ">
+                        {f'{ret_1w:+.2f}%' if ret_1w is not None else 'N/A'}
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # 上中下游個股列表（expander）
+    st.markdown("")
+    for seg in segments:
+        data = chain_data[seg]
+        if data["count"] == 0:
+            continue
+
+        with st.expander(f"{segment_icons[seg]} {seg}（{data['count']} 檔）", expanded=(seg == hottest)):
+            if data["count"] <= 5:
+                # 少量個股用 markdown 列表
+                for s in data["stocks"]:
+                    st.markdown(f"- `{s['id']}` {s['name']}")
+            else:
+                # 多量用 dataframe
+                seg_df = pd.DataFrame(data["stocks"])
+                seg_df.columns = ["代碼", "名稱", "市場代碼"]
+                market_map = {"twse": "上市", "tpex": "上櫃", "emerging": "興櫃"}
+                seg_df["市場"] = seg_df["市場代碼"].apply(lambda x: market_map.get(x, "?"))
+                seg_df = seg_df[["代碼", "名稱", "市場"]]
+                st.dataframe(seg_df, use_container_width=True, height=min(300, data["count"] * 35 + 40))
+
+    # 其他分類（如果有）
+    other_count = chain_data.get("其他", {}).get("count", 0)
+    if other_count > 0:
+        with st.expander(f"📋 未分類（{other_count} 檔）", expanded=False):
+            other_stocks = chain_data["其他"]["stocks"]
+            other_df = pd.DataFrame([
+                {"代碼": s["id"], "名稱": s["name"],
+                 "市場": {"twse": "上市", "tpex": "上櫃", "emerging": "興櫃"}.get(s.get("type",""), "?")}
+                for s in other_stocks
+            ])
+            st.dataframe(other_df, use_container_width=True, height=min(400, other_count * 35 + 40))
+
+
 # ─── 產業分類瀏覽 ─────────────────────────────────────────
 def render_industry_explorer(index, selected_industry):
     """渲染產業分類瀏覽頁面——可下鑽到個股。"""
@@ -320,21 +517,29 @@ def render_industry_explorer(index, selected_industry):
 
         st.markdown(f"### {cat_data['icon']} {cat_name} — {cat_data['count']} 檔個股")
 
-        # 上中下游架構
+        # ── 上中下游熱度比較（新功能）──
+        import json
+        stocks_json = json.dumps(cat_data["stocks"], ensure_ascii=False)
+        chain_data = compute_chain_heatmap(cat_name, stocks_json)
+        render_chain_heatmap(chain_data, cat_data["icon"], cat_name)
+
+        st.markdown("")
+
+        # ── 原有：產業鏈結構說明 ──
         chain = cat_data["chain"]
         if chain.get("上游") or chain.get("中游") or chain.get("下游"):
-            with st.expander("🔗 產業鏈結構（上中下游）", expanded=True):
+            with st.expander("🔗 產業鏈說明（參考架構）", expanded=False):
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    st.markdown("**🔵 上游**")
+                    st.markdown("**⬆️ 上游**")
                     for item in chain.get("上游", []):
                         st.markdown(f"- {item}")
                 with c2:
-                    st.markdown("**🟡 中游**")
+                    st.markdown("**➡️ 中游**")
                     for item in chain.get("中游", []):
                         st.markdown(f"- {item}")
                 with c3:
-                    st.markdown("**🟢 下游**")
+                    st.markdown("**⬇️ 下游**")
                     for item in chain.get("下游", []):
                         st.markdown(f"- {item}")
 

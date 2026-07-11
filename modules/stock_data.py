@@ -221,3 +221,67 @@ def get_industry_heat(stock_ids: List[str], market_types: List[str], max_stocks:
         return trends[n // 2]
     else:
         return round((trends[n // 2 - 1] + trends[n // 2]) / 2, 2)
+
+
+def get_chain_segment_heat(
+    stocks: List[Dict],
+    max_stocks: int = 15,
+) -> Optional[float]:
+    """
+    計算上中下游某一段的熱度（成交量趨勢中位數）。
+    stocks = [{"id": "2330", "type": "twse", "name": "台積電"}, ...]
+    回傳: 熱度百分比，或 None（資料不足）
+    """
+    sample = stocks[:max_stocks]
+    trends = []
+    for s in sample:
+        t = get_volume_trend(s["id"], s.get("type", "twse"))
+        if t is not None:
+            trends.append(t)
+
+    if not trends:
+        return None
+    trends.sort()
+    n = len(trends)
+    if n % 2 == 1:
+        return trends[n // 2]
+    else:
+        return round((trends[n // 2 - 1] + trends[n // 2]) / 2, 2)
+
+
+def get_chain_segment_returns(
+    stocks: List[Dict],
+    max_stocks: int = 15,
+    custom_start: str = None,
+    custom_end: str = None,
+) -> Dict[str, Optional[float]]:
+    """
+    計算上中下游某一段的加權平均漲跌幅。
+    回傳: {"today": pct, "1w": pct, "1m": pct, ...}
+    """
+    sample = stocks[:max_stocks]
+    return_keys = ["today", "prev", "5d", "10d", "1w", "1m", "3m", "6m", "1y"]
+    all_returns = {k: [] for k in return_keys}
+
+    for s in sample:
+        ret = get_historical_returns(s["id"], s.get("type", "twse"))
+        for key in return_keys:
+            if ret.get(key) is not None:
+                all_returns[key].append(ret[key])
+
+    avg = {}
+    for key, vals in all_returns.items():
+        avg[key] = round(sum(vals) / len(vals), 2) if vals else None
+
+    # 自訂日期範圍
+    if custom_start and custom_end:
+        custom_vals = []
+        for s in sample:
+            r = get_custom_range_return(s["id"], s.get("type", "twse"), custom_start, custom_end)
+            if r is not None:
+                custom_vals.append(r)
+        avg["custom"] = round(sum(custom_vals) / len(custom_vals), 2) if custom_vals else None
+    else:
+        avg["custom"] = None
+
+    return avg
