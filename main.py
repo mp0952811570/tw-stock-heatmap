@@ -97,41 +97,19 @@ def render_sidebar():
         )
 
         st.markdown("---")
-        # 資料來源卡片
-        st.markdown("""
-        <div style="
-            background: linear-gradient(135deg, #232a3f, #1a1f2e);
-            border: 1px solid #3a4263;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-top: 0.5rem;
-        ">
-            <div style="font-weight: 700; color: #f0b90b; margin-bottom: 0.5rem; font-size: 0.9rem;">📌 資料來源</div>
-            <ul style="margin: 0; padding-left: 1.2rem; color: #b0b8c8; font-size: 0.8rem; line-height: 1.6;">
-                <li>FinMind API（產業分類）</li>
-                <li>Yahoo Finance（股價）</li>
-                <li>twstock（即時行情）</li>
-                <li>Google News（新聞）</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+        # 資料來源
+        st.markdown("**📌 資料來源**")
+        st.markdown(
+            "- FinMind API（產業分類）\n"
+            "- Yahoo Finance（股價）\n"
+            "- twstock（即時行情）\n"
+            "- Google News（新聞）"
+        )
 
-        # GitHub 連結卡片
-        st.markdown("""
-        <div style="
-            background: linear-gradient(135deg, rgba(240,185,11,0.15), rgba(230,126,34,0.1));
-            border: 1px solid rgba(240,185,11,0.3);
-            border-radius: 0.5rem;
-            padding: 0.8rem 1rem;
-            text-align: center;
-            margin-top: 0.6rem;
-        ">
-            <a href="https://github.com/mp0952811570/tw-stock-heatmap"
-               style="color: #f0b90b; text-decoration: none; font-weight: 600; font-size: 0.85rem;">
-                🐙 GitHub Repo · Streamlit Cloud
-            </a>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("")
+        st.markdown(
+            "🐙 [GitHub Repo](https://github.com/mp0952811570/tw-stock-heatmap) · Streamlit Cloud"
+        )
 
         return mode, period, period_key, selected_industry, use_custom, custom_start, custom_end
 
@@ -188,24 +166,8 @@ def render_heat_overview(df, period_key, period_name, use_custom=False, custom_s
     else:
         title_text = f"🔥 台灣股市產業熱度排行榜（{period_name}）"
 
-    # Banner header
-    st.markdown(f"""
-    <div style="
-        background: linear-gradient(135deg, #232a3f 0%, #2d3556 50%, #1a1f2e 100%);
-        border: 1px solid rgba(240,185,11,0.25);
-        border-radius: 0.75rem;
-        padding: 1.5rem 2rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3), 0 0 20px rgba(240,185,11,0.08);
-    ">
-        <h1 style="
-            margin: 0;
-            font-size: 1.8rem;
-            color: #f0b90b;
-            -webkit-text-fill-color: #f0b90b;
-        ">{title_text}</h1>
-    </div>
-    """, unsafe_allow_html=True)
+    # Banner header — 用 Streamlit 原生方式
+    st.markdown(f"## {title_text}")
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -329,12 +291,10 @@ def compute_chain_heatmap(industry_name: str, stocks_json: str, _cache_version: 
 
 
 def render_chain_heatmap(chain_data: dict, industry_icon: str, industry_name: str):
-    """渲染上中下游熱度比較 visual block。"""
+    """渲染上中下游熱度比較 — 全部用 Streamlit 原生元件，不用 HTML。"""
 
-    # 準備三段資料
     segments = ["上游", "中游", "下游"]
     segment_icons = {"上游": "⬆️", "中游": "➡️", "下游": "⬇️"}
-    segment_colors = {"上游": "#e67e22", "中游": "#f0b90b", "下游": "#2ecc71"}
 
     # 找最熱的段
     heats = {seg: chain_data[seg]["heat"] for seg in segments if chain_data[seg]["heat"] is not None}
@@ -343,131 +303,37 @@ def render_chain_heatmap(chain_data: dict, industry_icon: str, industry_name: st
     st.markdown("### 🔥 上中下游熱度比較")
 
     if hottest:
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, rgba(240,185,11,0.15), rgba(230,126,34,0.08));
-            border: 1px solid rgba(240,185,11,0.25);
-            border-radius: 0.5rem;
-            padding: 0.8rem 1.2rem;
-            margin-bottom: 1rem;
-        ">
-            <span style="color: #f0b90b; font-weight: 700; font-size: 1rem;">
-                🏆 最熱段：
-            </span>
-            <span style="color: #f5f5f5; font-weight: 600; font-size: 1rem;">
-                {segment_icons[hottest]} {hottest}
-            </span>
-            <span style="color: #b0b8c8; font-size: 0.9rem;">
-                （熱度 {chain_data[hottest]['heat']:+.1f}%）
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
+        heat_str = f"{chain_data[hottest]['heat']:+.1f}%"
+        st.success(f"🏆 最熱段：{segment_icons[hottest]} {hottest}（熱度 {heat_str}）")
 
-    # 三段卡片並列
+    # 三段卡片並列 — 用 st.columns + st.metric
     cols = st.columns(3)
     for i, seg in enumerate(segments):
         data = chain_data[seg]
         with cols[i]:
+            count = data["count"]
             heat_val = data["heat"]
             ret_1w = data["return_1w"]
-            count = data["count"]
 
-            # 判定熱度顏色
-            if heat_val is None or (isinstance(heat_val, float) and heat_val != heat_val):
-                heat_color = "#b0b8c8"
-                heat_bar_width = 0
-                heat_text = "N/A"
-            elif heat_val > 10:
-                heat_color = "#e74c3c"
-                heat_bar_width = min(100, int(heat_val * 2))
-                heat_text = f"{heat_val:+.1f}%"
-            elif heat_val > 0:
-                heat_color = "#f0b90b"
-                heat_bar_width = min(100, int(heat_val * 3))
-                heat_text = f"{heat_val:+.1f}%"
-            elif heat_val is not None:
-                heat_color = "#2ecc71"
-                heat_bar_width = min(100, int(abs(heat_val) * 3))
-                heat_text = f"{heat_val:+.1f}%"
-            else:
-                heat_color = "#b0b8c8"
-                heat_bar_width = 0
-                heat_text = "N/A"
+            # 標題
+            badge = " 🏆 最熱" if seg == hottest else ""
+            st.markdown(f"**{segment_icons[seg]} {seg}{badge}**")
+            st.caption(f"{count} 檔個股")
 
-            is_hottest = (seg == hottest)
-            border_color = segment_colors[seg] if is_hottest else "#3a4263"
-            glow = "box-shadow: 0 0 16px rgba(240,185,11,0.15);" if is_hottest else ""
-
-            # 當該段沒有個股時，顯示「無資料」卡片
             if count == 0:
-                st.markdown(f"""
-                <div style="
-                    background: linear-gradient(135deg, #232a3f, #1a1f2e);
-                    border: 2px dashed #3a4263;
-                    border-radius: 0.5rem;
-                    padding: 1rem;
-                    margin: 0.3rem 0;
-                    text-align: center;
-                ">
-                    <div style="font-size: 1.1rem; font-weight: 700; color: #b0b8c8; margin-bottom: 0.3rem;">
-                        {segment_icons[seg]} {seg}
-                    </div>
-                    <div style="color: #6b7280; font-size: 0.8rem;">
-                        無代表性個股
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                st.info("無代表性個股")
                 continue
 
-            hot_badge = f'<span style="color:#f0b90b;font-size:0.75rem;margin-left:0.3rem;">🏆 最熱</span>' if is_hottest else ''
+            # 熱度 — 用 metric 顯示
+            heat_str = f"{heat_val:+.1f}%" if heat_val is not None else "N/A"
+            st.metric("熱度", heat_str)
 
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #232a3f, #1a1f2e);
-                border: 2px solid {border_color};
-                border-radius: 0.5rem;
-                padding: 1rem;
-                margin: 0.3rem 0;
-                {glow}
-            ">
-                <div style="font-size: 1.1rem; font-weight: 700; color: #f5f5f5; margin-bottom: 0.3rem;">
-                    {segment_icons[seg]} {seg}
-                    {hot_badge}
-                </div>
-                <div style="color: #b0b8c8; font-size: 0.8rem; margin-bottom: 0.6rem;">
-                    {count} 檔個股
-                </div>
-
-                <!-- 熱度 bar -->
-                <div style="margin-bottom: 0.5rem;">
-                    <div style="color: #b0b8c8; font-size: 0.75rem; margin-bottom: 0.2rem;">熱度</div>
-                    <div style="background: #1a1f2e; border-radius: 0.25rem; height: 0.6rem; overflow: hidden;">
-                        <div style="
-                            background: {heat_color};
-                            height: 100%;
-                            width: {heat_bar_width}%;
-                            border-radius: 0.25rem;
-                            transition: width 0.5s ease;
-                        "></div>
-                    </div>
-                    <div style="color: {heat_color}; font-size: 0.9rem; font-weight: 700; margin-top: 0.2rem;">
-                        {heat_text}
-                    </div>
-                </div>
-
-                <!-- 1週漲跌 -->
-                <div style="margin-top: 0.5rem;">
-                    <div style="color: #b0b8c8; font-size: 0.75rem;">1週漲跌</div>
-                    <div style="
-                        color: {'#e74c3c' if ret_1w and ret_1w > 0 else '#2ecc71' if ret_1w else '#b0b8c8'};
-                        font-size: 0.95rem;
-                        font-weight: 700;
-                    ">
-                        {f'{ret_1w:+.2f}%' if ret_1w is not None else 'N/A'}
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            # 1週漲跌 — 用 metric 顯示
+            if ret_1w is not None:
+                st.metric("1週漲跌", f"{ret_1w:+.2f}%",
+                          delta_color="inverse" if ret_1w > 0 else "normal")
+            else:
+                st.metric("1週漲跌", "N/A")
 
     # 上中下游個股列表（expander）
     st.markdown("")
@@ -476,31 +342,46 @@ def render_chain_heatmap(chain_data: dict, industry_icon: str, industry_name: st
         if data["count"] == 0:
             continue
 
-        with st.expander(f"{segment_icons[seg]} {seg}（{data['count']} 檔）", expanded=(seg == hottest)):
+        is_hot = (seg == hottest)
+        with st.expander(
+            f"{segment_icons[seg]} {seg}（{data['count']} 檔）",
+            expanded=is_hot,
+        ):
             if data["count"] <= 5:
-                # 少量個股用 markdown 列表
                 for s in data["stocks"]:
                     st.markdown(f"- `{s['id']}` {s['name']}")
             else:
-                # 多量用 dataframe
                 seg_df = pd.DataFrame(data["stocks"])
                 seg_df.columns = ["代碼", "名稱", "市場代碼"]
                 market_map = {"twse": "上市", "tpex": "上櫃", "emerging": "興櫃"}
                 seg_df["市場"] = seg_df["市場代碼"].apply(lambda x: market_map.get(x, "?"))
                 seg_df = seg_df[["代碼", "名稱", "市場"]]
-                st.dataframe(seg_df, use_container_width=True, height=min(300, data["count"] * 35 + 40))
+                st.dataframe(
+                    seg_df,
+                    use_container_width=True,
+                    height=min(300, data["count"] * 35 + 40),
+                )
 
-    # 其他分類（如果有）
+    # 其他分類
     other_count = chain_data.get("其他", {}).get("count", 0)
     if other_count > 0:
         with st.expander(f"📋 未分類（{other_count} 檔）", expanded=False):
             other_stocks = chain_data["其他"]["stocks"]
             other_df = pd.DataFrame([
-                {"代碼": s["id"], "名稱": s["name"],
-                 "市場": {"twse": "上市", "tpex": "上櫃", "emerging": "興櫃"}.get(s.get("type",""), "?")}
+                {
+                    "代碼": s["id"],
+                    "名稱": s["name"],
+                    "市場": {"twse": "上市", "tpex": "上櫃", "emerging": "興櫃"}.get(
+                        s.get("type", ""), "?"
+                    ),
+                }
                 for s in other_stocks
             ])
-            st.dataframe(other_df, use_container_width=True, height=min(400, other_count * 35 + 40))
+            st.dataframe(
+                other_df,
+                use_container_width=True,
+                height=min(400, other_count * 35 + 40),
+            )
 
 
 # ─── 產業分類瀏覽 ─────────────────────────────────────────
@@ -649,37 +530,14 @@ def render_news(index, selected_industry):
         return
 
     for n in news:
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #232a3f, #1a1f2e);
-            border: 1px solid #3a4263;
-            border-left: 4px solid #f0b90b;
-            border-radius: 0.5rem;
-            padding: 1.2rem 1.5rem;
-            margin: 0.8rem 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-            transition: all 0.3s ease;
-        " onmouseover="this.style.borderColor='#f0b90b'; this.style.transform='translateX(4px)';"
-          onmouseout="this.style.borderColor='#3a4263'; this.style.transform='translateX(0)';">
-            <a href="{n['url']}" target="_blank" style="
-                color: #fcd535;
-                text-decoration: none;
-                font-size: 1.05rem;
-                font-weight: 700;
-            ">{n['title']}</a>
-            <div style="
-                color: #b0b8c8;
-                font-size: 0.8rem;
-                margin-top: 0.4rem;
-            ">📌 {n['source']} · {n['published']} · 相關: {n.get('related_stock', '')}</div>
-            <div style="
-                color: #d5d8e0;
-                font-size: 0.85rem;
-                margin-top: 0.5rem;
-                line-height: 1.5;
-            ">{n.get('snippet', '')}</div>
-        </div>
-        """, unsafe_allow_html=True)
+        with st.container():
+            st.markdown(f"#### [{n['title']}]({n['url']})")
+            st.caption(
+                f"📌 {n['source']} · {n['published']} · 相關: {n.get('related_stock', '')}"
+            )
+            if n.get("snippet"):
+                st.markdown(n["snippet"])
+            st.markdown("---")
 
 
 # ─── 主程式入口 ───────────────────────────────────────────
